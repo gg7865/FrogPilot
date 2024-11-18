@@ -63,6 +63,11 @@ class ToyotaFlags(IntFlag):
   RAISED_ACCEL_LIMIT = 1024
   SECOC = 2048
 
+  # FrogPilot Toyota flags
+  RADAR_CAN_FILTER = 4096
+  SMART_DSU = 8192
+  ZSS = 16384
+
 class Footnote(Enum):
   CAMRY = CarFootnote(
     "openpilot operates above 28mph for Camry 4CYL L, 4CYL LE and 4CYL SE which don't have Full-Speed Range Dynamic Radar Cruise Control.",
@@ -73,6 +78,7 @@ class Footnote(Enum):
 class ToyotaCarDocs(CarDocs):
   package: str = "All"
   car_parts: CarParts = field(default_factory=CarParts.common([CarHarness.toyota_a]))
+
 
 @dataclass
 class ToyotaTSS2PlatformConfig(PlatformConfig):
@@ -592,5 +598,8 @@ SECOC_CAR = CAR.with_flags(ToyotaFlags.SECOC)
 
 # no resume button press required
 NO_STOP_TIMER_CAR = CAR.with_flags(ToyotaFlags.NO_STOP_TIMER)
+
+STOP_AND_GO_CAR = TSS2_CAR | {CAR.TOYOTA_PRIUS, CAR.TOYOTA_PRIUS_V, CAR.TOYOTA_RAV4H, CAR.LEXUS_RX, CAR.TOYOTA_CHR, CAR.TOYOTA_CAMRY, CAR.TOYOTA_HIGHLANDER,
+                              CAR.TOYOTA_SIENNA, CAR.LEXUS_CTH, CAR.LEXUS_NX, CAR.TOYOTA_MIRAI, CAR.TOYOTA_AVALON_2019}
 
 DBC = CAR.create_dbc_map()
