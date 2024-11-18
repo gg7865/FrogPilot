@@ -554,7 +554,6 @@ class FrogPilotVariables:
     toggle.lateral_tuning = params.get_bool("LateralTune")
     toggle.nnff = toggle.lateral_tuning and params.get_bool("NNFF")
     toggle.nnff_lite = toggle.lateral_tuning and params.get_bool("NNFFLite")
-    toggle.taco_tune = toggle.lateral_tuning and params.get_bool("TacoTune")
     toggle.use_turn_desires = toggle.lateral_tuning and params.get_bool("TurnDesires")
 
     toggle.long_pitch = openpilot_longitudinal and car_make == "gm" and params.get_bool("LongPitch")
@@ -565,9 +564,9 @@ class FrogPilotVariables:
     toggle.deceleration_profile = params.get_int("DecelerationProfile") if toggle.longitudinal_tuning else 0
     toggle.human_acceleration = toggle.longitudinal_tuning and params.get_bool("HumanAcceleration")
     toggle.human_following = toggle.longitudinal_tuning and params.get_bool("HumanFollowing")
-    toggle.increased_stopped_distance = params.get_int("IncreasedStoppedDistance") * distance_conversion if toggle.longitudinal_tuning else 0
     toggle.lead_detection_probability = clip(params.get_int("LeadDetectionThreshold") / 100, 0.01, 0.99) if toggle.longitudinal_tuning else 0.5
     toggle.max_desired_acceleration = clip(params.get_float("MaxDesiredAcceleration"), 0.1, 4.0) if toggle.longitudinal_tuning else 4.0
+    toggle.taco_tune = toggle.longitudinal_tuning and params.get_bool("TacoTune")
 
     available_models = params.get("AvailableModels", encoding='utf-8') or ""
     available_model_names = params.get("AvailableModelsNames", encoding='utf-8') or ""
@@ -609,7 +608,6 @@ class FrogPilotVariables:
     toggle.map_style = params.get_int("MapStyle") if toggle.navigation_ui else 0
     toggle.road_name_ui = toggle.navigation_ui and params.get_bool("RoadNameUI")
     toggle.show_speed_limit_offset = toggle.navigation_ui and params.get_bool("ShowSLCOffset")
-    toggle.speed_limit_sources = toggle.navigation_ui and params.get_bool("SpeedLimitSources")
     toggle.speed_limit_vienna = toggle.navigation_ui and params.get_bool("UseVienna")
 
     toggle.old_long_api = openpilot_longitudinal and car_make == "gm" and not params.get_bool("NewLongAPIGM")
@@ -632,6 +630,7 @@ class FrogPilotVariables:
     toggle.custom_cruise_increase_long = params.get_int("CustomCruiseLong") if toggle.quality_of_life_longitudinal and not pcm_cruise else 5
     toggle.force_standstill = toggle.quality_of_life_longitudinal and params.get_bool("ForceStandstill")
     toggle.force_stops = toggle.quality_of_life_longitudinal and params.get_bool("ForceStops")
+    toggle.increased_stopped_distance = params.get_int("IncreasedStoppedDistance") * distance_conversion if toggle.quality_of_life_longitudinal else 0
     toggle.map_gears = toggle.quality_of_life_longitudinal and params.get_bool("MapGears")
     toggle.map_acceleration = toggle.map_gears and params.get_bool("MapAcceleration")
     toggle.map_deceleration = toggle.map_gears and params.get_bool("MapDeceleration")
@@ -680,6 +679,7 @@ class FrogPilotVariables:
     toggle.speed_limit_priority3 = params.get("SLCPriority3", encoding='utf-8') if toggle.speed_limit_controller else None
     toggle.speed_limit_priority_highest = toggle.speed_limit_priority1 == "Highest"
     toggle.speed_limit_priority_lowest = toggle.speed_limit_priority1 == "Lowest"
+    toggle.speed_limit_sources = toggle.speed_limit_controller and params.get_bool("SpeedLimitSources")
 
     toggle.startup_alert_top = params.get("StartupMessageTop", encoding='utf-8') or ""
     toggle.startup_alert_bottom = params.get("StartupMessageBottom", encoding='utf-8') or ""
@@ -852,16 +852,15 @@ class FrogPilotVariables:
       toggle.lateral_tuning = bool(self.default_frogpilot_toggles.LateralTune)
       toggle.nnff = bool(toggle.lateral_tuning and self.default_frogpilot_toggles.NNFF)
       toggle.nnff_lite = bool(toggle.lateral_tuning and self.default_frogpilot_toggles.NNFFLite)
-      toggle.taco_tune = bool(toggle.lateral_tuning and self.default_frogpilot_toggles.TacoTune)
       toggle.use_turn_desires = bool(toggle.lateral_tuning and self.default_frogpilot_toggles.TurnDesires)
 
       toggle.long_pitch = bool(openpilot_longitudinal and car_make == "gm" and self.default_frogpilot_toggles.LongPitch)
 
       toggle.human_acceleration = bool(toggle.longitudinal_tuning and self.default_frogpilot_toggles.HumanAcceleration)
       toggle.human_following = bool(toggle.longitudinal_tuning and self.default_frogpilot_toggles.HumanFollowing)
-      toggle.increased_stopped_distance = int(self.default_frogpilot_toggles.IncreasedStoppedDistance) * distance_conversion if toggle.longitudinal_tuning else 0
       toggle.lead_detection_probability = clip(float(self.default_frogpilot_toggles.LeadDetectionThreshold) / 100, 0.01, 0.99) if toggle.longitudinal_tuning else 0.5
       toggle.max_desired_acceleration = clip(float(self.default_frogpilot_toggles.MaxDesiredAcceleration), 0.1, 4.0) if toggle.longitudinal_tuning else 4.0
+      toggle.taco_tune = bool(toggle.longitudinal_tuning and self.default_frogpilot_toggles.TacoTune)
 
       toggle.model = DEFAULT_CLASSIC_MODEL
       toggle.model_randomizer = self.default_frogpilot_toggles.ModelRandomizer
@@ -886,7 +885,6 @@ class FrogPilotVariables:
       toggle.map_style = int(self.default_frogpilot_toggles.MapStyle) if toggle.navigation_ui else 0
       toggle.road_name_ui = bool(toggle.navigation_ui and self.default_frogpilot_toggles.RoadNameUI)
       toggle.show_speed_limit_offset = bool(toggle.navigation_ui and self.default_frogpilot_toggles.ShowSLCOffset)
-      toggle.speed_limit_sources = bool(toggle.navigation_ui and self.default_frogpilot_toggles.SpeedLimitSources)
       toggle.speed_limit_vienna = bool(toggle.navigation_ui and self.default_frogpilot_toggles.UseVienna)
 
       toggle.old_long_api = bool(openpilot_longitudinal and car_make == "gm" and not self.default_frogpilot_toggles.NewLongAPIGM)
@@ -901,6 +899,7 @@ class FrogPilotVariables:
       toggle.custom_cruise_increase_long = int(self.default_frogpilot_toggles.CustomCruiseLong) if toggle.quality_of_life_longitudinal and not pcm_cruise else 5
       toggle.force_standstill = bool(toggle.quality_of_life_longitudinal and self.default_frogpilot_toggles.ForceStandstill)
       toggle.force_stops = bool(toggle.quality_of_life_longitudinal and self.default_frogpilot_toggles.ForceStops)
+      toggle.increased_stopped_distance = int(self.default_frogpilot_toggles.IncreasedStoppedDistance) * distance_conversion if toggle.quality_of_life_longitudinal else 0
       toggle.map_gears = bool(toggle.quality_of_life_longitudinal and self.default_frogpilot_toggles.MapGears)
       toggle.map_acceleration = bool(toggle.map_gears and self.default_frogpilot_toggles.MapAcceleration)
       toggle.map_deceleration = bool(toggle.map_gears and self.default_frogpilot_toggles.MapDeceleration)
@@ -939,6 +938,7 @@ class FrogPilotVariables:
       toggle.speed_limit_priority3 = self.default_frogpilot_toggles.SLCPriority3 if toggle.speed_limit_controller else None
       toggle.speed_limit_priority_highest = bool(toggle.speed_limit_priority1 == "Highest")
       toggle.speed_limit_priority_lowest = bool(toggle.speed_limit_priority1 == "Lowest")
+      toggle.speed_limit_sources = bool(toggle.speed_limit_controller and self.default_frogpilot_toggles.SpeedLimitSources)
 
       toggle.startup_alert_top = str(self.default_frogpilot_toggles.StartupMessageTop)
       toggle.startup_alert_bottom = str(self.default_frogpilot_toggles.StartupMessageBottom)
@@ -1064,13 +1064,13 @@ class FrogPilotVariables:
 
       toggle.lateral_tuning = bool(self.default_frogpilot_toggles.LateralTune)
       toggle.nnff_lite = bool(toggle.lateral_tuning and self.default_frogpilot_toggles.NNFFLite)
-      toggle.taco_tune = bool(toggle.lateral_tuning and self.default_frogpilot_toggles.TacoTune)
       toggle.use_turn_desires = bool(toggle.lateral_tuning and self.default_frogpilot_toggles.TurnDesires)
 
       toggle.long_pitch = bool(openpilot_longitudinal and car_make == "gm" and self.default_frogpilot_toggles.LongPitch)
 
       toggle.lead_detection_probability = clip(float(self.default_frogpilot_toggles.LeadDetectionThreshold) / 100, 0.01, 0.99) if toggle.longitudinal_tuning else 0.5
       toggle.max_desired_acceleration = clip(float(self.default_frogpilot_toggles.MaxDesiredAcceleration), 0.1, 4.0) if toggle.longitudinal_tuning else 4.0
+      toggle.taco_tune = bool(toggle.longitudinal_tuning and self.default_frogpilot_toggles.TacoTune)
 
       toggle.model = DEFAULT_CLASSIC_MODEL
       toggle.model_randomizer = self.default_frogpilot_toggles.ModelRandomizer
@@ -1092,7 +1092,6 @@ class FrogPilotVariables:
       toggle.map_style = int(self.default_frogpilot_toggles.MapStyle) if toggle.navigation_ui else 0
       toggle.road_name_ui = bool(toggle.navigation_ui and self.default_frogpilot_toggles.RoadNameUI)
       toggle.show_speed_limit_offset = bool(toggle.navigation_ui and self.default_frogpilot_toggles.ShowSLCOffset)
-      toggle.speed_limit_sources = bool(toggle.navigation_ui and self.default_frogpilot_toggles.SpeedLimitSources)
       toggle.speed_limit_vienna = bool(toggle.navigation_ui and self.default_frogpilot_toggles.UseVienna)
 
       toggle.old_long_api = bool(openpilot_longitudinal and car_make == "gm" and not self.default_frogpilot_toggles.NewLongAPIGM)
@@ -1130,6 +1129,7 @@ class FrogPilotVariables:
       toggle.speed_limit_priority3 = self.default_frogpilot_toggles.SLCPriority3 if toggle.speed_limit_controller else None
       toggle.speed_limit_priority_highest = bool(toggle.speed_limit_priority1 == "Highest")
       toggle.speed_limit_priority_lowest = bool(toggle.speed_limit_priority1 == "Lowest")
+      toggle.speed_limit_sources = bool(toggle.speed_limit_controller and self.default_frogpilot_toggles.SpeedLimitSources)
 
       toggle.startup_alert_top = str(self.default_frogpilot_toggles.StartupMessageTop)
       toggle.startup_alert_bottom = str(self.default_frogpilot_toggles.StartupMessageBottom)

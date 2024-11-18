@@ -64,15 +64,16 @@ FrogPilotLongitudinalPanel::FrogPilotLongitudinalPanel(FrogPilotSettingsWindow *
     {"DecelerationProfile", tr("Deceleration Profile"), tr("Enables either a sporty or eco-friendly deceleration rate."), ""},
     {"HumanAcceleration", tr("Human-Like Acceleration"), tr("Uses the lead's acceleration rate when at a takeoff and ramps off the acceleration rate when approaching the maximum set speed for a more 'human-like' driving experience."), ""},
     {"HumanFollowing", tr("Human-Like Approach Behind Leads"), tr("Dynamically adjusts the following distance when approaching slower or stopped vehicles for a more 'human-like' driving experience."), ""},
-    {"IncreasedStoppedDistance", tr("Increase Stopped Distance"), tr("Increases the distance to stop behind vehicles."), ""},
     {"LeadDetectionThreshold", tr("Lead Detection Confidence"), tr("Controls how sensitive openpilot is to detecting vehicles ahead. A lower value can help detect vehicles sooner and from farther away, but increases the chance openpilot mistakes other objects for vehicles."), ""},
     {"MaxDesiredAcceleration", tr("Maximum Acceleration Rate"), tr("Sets a cap on how fast openpilot can accelerate."), ""},
+    {"TacoTune", tr("comma's 2022 Taco Bell Turn Speed Hack"), tr("Uses comma's speed hack they used to help handle left and right turns more precisely during their 2022 'Taco Bell' drive by reducing the maximum allowed speed and acceleration while turning."), ""},
 
     {"QOLLongitudinal", tr("Quality of Life Improvements"), tr("Miscellaneous longitudinal focused features to improve your overall openpilot experience."), "../frogpilot/assets/toggle_icons/quality_of_life.png"},
     {"CustomCruise", tr("Cruise Increase Interval"), tr("Controls the interval used when increasing the cruise control speed."), ""},
     {"CustomCruiseLong", tr("Custom Cruise Interval (Long Press)"), tr("Controls the interval used when increasing the cruise control speed while holding down the button for 0.5+ seconds."), ""},
     {"ForceStandstill", tr("Force Keep openpilot in the Standstill State"), tr("Keeps openpilot in the 'standstill' state until the gas pedal or 'resume' button is pressed."), ""},
     {"ForceStops", tr("Force Stop for 'Detected' Stop Lights/Signs"), tr("Forces a stop whenever openpilot 'detects' a potential red light/stop sign to prevent it from running the red light/stop sign."), ""},
+    {"IncreasedStoppedDistance", tr("Increase Stopped Distance"), tr("Increases the distance to stop behind vehicles."), ""},
     {"SetSpeedOffset", tr("Set Speed Offset"), tr("Controls how much higher or lower the set speed should be compared to your current set speed. For example, if you prefer to drive 5 mph above the speed limit, this setting will automatically add that difference when you adjust your set speed."), ""},
     {"MapGears", tr("Map Accel/Decel to Gears"), tr("Maps the acceleration and deceleration profiles to your car's 'Eco' or 'Sport' gear modes."), ""},
     {"ReverseCruise", tr("Reverse Cruise Increase"), tr("Reverses the long press cruise increase feature to increase the max speed by 5 mph instead of 1 on short presses."), ""},
@@ -86,12 +87,13 @@ FrogPilotLongitudinalPanel::FrogPilotLongitudinalPanel(FrogPilotSettingsWindow *
     {"SLCLookaheadHigher", tr("Prepare for Higher Speed Limits"), tr("Sets a lookahead value to prepare for upcoming higher speed limits when using downloaded map data."), ""},
     {"SLCLookaheadLower", tr("Prepare for Lower Speed Limits"), tr("Sets a lookahead value to prepare for upcoming lower speed limits when using downloaded map data."), ""},
     {"SetSpeedLimit", tr("Set Speed to Current Limit"), tr("Sets your max speed to match the current speed limit when enabling openpilot."), ""},
-    {"SLCPriority", tr("Speed Limit Source Priority"), tr("Sets the order of priority for speed limit data sources."), ""},
+    {"SLCPriority", tr("Speed Limit Source Priority Order"), tr("Sets the order of priority for speed limit data sources."), ""},
     {"SLCOffsets", tr("Speed Limit Offsets"), tr("Set speed limit offsets to drive over the posted speed limit."), ""},
     {"Offset1", tr("Speed Limit Offset (0-34 mph)"), tr("Sets the speed limit offset for speeds between 0 and 34 mph."), ""},
     {"Offset2", tr("Speed Limit Offset (35-54 mph)"), tr("Sets the speed limit offset for speeds between 35 and 54 mph."), ""},
     {"Offset3", tr("Speed Limit Offset (55-64 mph)"), tr("Sets the speed limit offset for speeds between 55 and 64 mph."), ""},
     {"Offset4", tr("Speed Limit Offset (65-99 mph)"), tr("Sets the speed limit offset for speeds between 65 and 99 mph."), ""},
+    {"SpeedLimitSources", tr("Show Speed Limit Sources"), tr("Displays the speed limit sources in the onroad UI when using 'Speed Limit Controller'."), ""},
   };
 
   for (const auto &[param, title, desc, icon] : longitudinalToggles) {
@@ -269,7 +271,6 @@ FrogPilotLongitudinalPanel::FrogPilotLongitudinalPanel(FrogPilotSettingsWindow *
         if (customizationLevel == 0) {
           modifiedLongitudinalTuneKeys.erase("HumanAcceleration");
           modifiedLongitudinalTuneKeys.erase("HumanFollowing");
-          modifiedLongitudinalTuneKeys.erase("IncreasedStoppedDistance");
           modifiedLongitudinalTuneKeys.erase("LeadDetectionThreshold");
           modifiedLongitudinalTuneKeys.erase("MaxDesiredAcceleration");
         } else if (customizationLevel == 1) {
@@ -290,8 +291,6 @@ FrogPilotLongitudinalPanel::FrogPilotLongitudinalPanel(FrogPilotSettingsWindow *
       std::vector<QString> decelerationProfiles{tr("Standard"), tr("Eco"), tr("Sport")};
       ButtonParamControl *decelerationProfileToggle = new ButtonParamControl(param, title, desc, icon, decelerationProfiles);
       longitudinalToggle = decelerationProfileToggle;
-    } else if (param == "IncreasedStoppedDistance") {
-      longitudinalToggle = new FrogPilotParamValueControl(param, title, desc, icon, 0, 10, tr(" feet"));
     } else if (param == "LeadDetectionThreshold") {
       longitudinalToggle = new FrogPilotParamValueControl(param, title, desc, icon, 1, 99, "%");
     } else if (param == "MaxDesiredAcceleration") {
@@ -328,6 +327,8 @@ FrogPilotLongitudinalPanel::FrogPilotLongitudinalPanel(FrogPilotSettingsWindow *
       longitudinalToggle = new FrogPilotParamValueControl(param, title, desc, icon, 1, 99, tr("mph"));
     } else if (param == "CustomCruiseLong") {
       longitudinalToggle = new FrogPilotParamValueControl(param, title, desc, icon, 1, 99, tr("mph"));
+    } else if (param == "IncreasedStoppedDistance") {
+      longitudinalToggle = new FrogPilotParamValueControl(param, title, desc, icon, 0, 10, tr(" feet"));
     } else if (param == "MapGears") {
       std::vector<QString> mapGearsToggles{"MapAcceleration", "MapDeceleration"};
       std::vector<QString> mapGearsToggleNames{tr("Acceleration"), tr("Deceleration")};
@@ -345,6 +346,7 @@ FrogPilotLongitudinalPanel::FrogPilotLongitudinalPanel(FrogPilotSettingsWindow *
           modifiedSpeedLimitControllerKeys.erase("SLCOverride");
           modifiedSpeedLimitControllerKeys.erase("SLCPriority");
           modifiedSpeedLimitControllerKeys.erase("SLCQOL");
+          modifiedSpeedLimitControllerKeys.erase("SpeedLimitSources");
         } else if (customizationLevel != 2) {
           modifiedSpeedLimitControllerKeys.erase("SLCPriority");
           modifiedSpeedLimitControllerKeys.erase("SLCQOL");
@@ -751,6 +753,7 @@ void FrogPilotLongitudinalPanel::hideSubToggles() {
       modifiedSpeedLimitControllerKeys.erase("SLCOverride");
       modifiedSpeedLimitControllerKeys.erase("SLCPriority");
       modifiedSpeedLimitControllerKeys.erase("SLCQOL");
+      modifiedSpeedLimitControllerKeys.erase("SpeedLimitSources");
     }
 
     showToggles(modifiedSpeedLimitControllerKeys);
