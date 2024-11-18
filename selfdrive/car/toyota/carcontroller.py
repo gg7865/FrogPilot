@@ -246,11 +246,15 @@ class CarController(CarControllerBase):
           # let PCM handle stopping for now
           pcm_accel_compensation = 0.0
           if not stopping:
-            pcm_accel_compensation = 2.0 * (CS.pcm_accel_net - net_acceleration_request)
+            pcm_accel_compensation = 2.0 * (new_pcm_accel_net - net_acceleration_request)
 
           # prevent compensation windup
-          pcm_accel_compensation = clip(pcm_accel_compensation, pcm_accel_cmd - self.params.ACCEL_MAX,
-                                        pcm_accel_cmd - self.params.ACCEL_MIN)
+          if frogpilot_toggles.sport_plus:
+            pcm_accel_compensation = clip(pcm_accel_compensation, pcm_accel_cmd - get_max_allowed_accel(CS.out.vEgo),
+                                          pcm_accel_cmd - self.params.ACCEL_MIN)
+          else:
+            pcm_accel_compensation = clip(pcm_accel_compensation, pcm_accel_cmd - self.params.ACCEL_MAX,
+                                          pcm_accel_cmd - self.params.ACCEL_MIN)
 
           pcm_accel_cmd = pcm_accel_cmd - self.pcm_accel_compensation.update(pcm_accel_compensation)
 
