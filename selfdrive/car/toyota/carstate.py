@@ -11,6 +11,7 @@ from openpilot.selfdrive.car.interfaces import CarStateBase
 from openpilot.selfdrive.car.toyota.values import ToyotaFlags, CAR, DBC, STEER_THRESHOLD, NO_STOP_TIMER_CAR, \
                                                   TSS2_CAR, RADAR_ACC_CAR, EPS_SCALE, UNSUPPORTED_DSU_CAR, SECOC_CAR
 
+ButtonType = car.CarState.ButtonEvent.Type
 SteerControlType = car.CarParams.SteerControlType
 
 # These steering fault definitions seem to be common across LKA (torque) and LTA (angle):
@@ -25,27 +26,10 @@ TEMP_STEER_FAULTS = (0, 9, 11, 21, 25)
 PERM_STEER_FAULTS = (3, 17)
 
 
-# Traffic signals for Speed Limit Controller - Credit goes to the DragonPilot team!
-@staticmethod
-def calculate_speed_limit(cp_cam, frogpilot_toggles):
-  signals = ["TSGN1", "SPDVAL1", "SPLSGN1", "TSGN2", "SPLSGN2", "TSGN3", "SPLSGN3", "TSGN4", "SPLSGN4"]
-  traffic_signals = {signal: cp_cam.vl["RSA1"].get(signal, cp_cam.vl["RSA2"].get(signal)) for signal in signals}
-
-  tsgn1 = traffic_signals.get("TSGN1")
-  spdval1 = traffic_signals.get("SPDVAL1")
-
-  if tsgn1 == 1 and not frogpilot_toggles.force_mph_dashboard:
-    return spdval1 * CV.KPH_TO_MS
-  elif tsgn1 == 36 or frogpilot_toggles.force_mph_dashboard:
-    return spdval1 * CV.MPH_TO_MS
-  return 0
-
-
 class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
-    self.shifter_values = can_define.dv["GEAR_PACKET"]["GEAR"]
     self.eps_torque_scale = EPS_SCALE[CP.carFingerprint] / 100.
     self.cluster_speed_hyst_gap = CV.KPH_TO_MS / 2.
     self.cluster_min_speed = CV.KPH_TO_MS / 2.
@@ -61,23 +45,14 @@ class CarState(CarStateBase):
     self.accurate_steer_angle_seen = False
     self.angle_offset = FirstOrderFilter(None, 60.0, DT_CTRL, initialized=False)
 
-    self.prev_distance_button = 0
     self.distance_button = 0
 
     self.pcm_follow_distance = 0
 
-    self.low_speed_lockout = False
     self.acc_type = 1
     self.lkas_hud = {}
     self.pcm_accel_net = 0.0
     self.secoc_synchronization = None
-
-    # FrogPilot variables
-    self.latActive_previous = False
-    self.needs_angle_offset_zss = True
-
-    self.angle_offset_zss = 0
-    self.zorro_steer_value = 0
 
   def update(self, cp, cp_cam, CC, frogpilot_toggles):
     ret = car.CarState.new_message()
@@ -113,11 +88,7 @@ class CarState(CarStateBase):
       ret.gasPressed = cp.vl["GAS_PEDAL"]["GAS_PEDAL_USER"] > 0
       can_gear = int(cp.vl["GEAR_PACKET_HYBRID"]["GEAR"])
     else:
-      if self.CP.enableGasInterceptor:
-        ret.gas = (cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS"] + cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS2"]) // 2
-        ret.gasPressed = ret.gas > 805
-      else:
-        ret.gasPressed = cp.vl["PCM_CRUISE"]["GAS_RELEASED"] == 0  # TODO: these also have GAS_PEDAL, come back and unify
+      ret.gasPressed = cp.vl["PCM_CRUISE"]["GAS_RELEASED"] == 0  # TODO: these also have GAS_PEDAL, come back and unify
       can_gear = int(cp.vl["GEAR_PACKET"]["GEAR"])
       if not self.CP.enableDsu and not self.CP.flags & ToyotaFlags.DISABLE_RADAR.value:
         ret.stockAeb = bool(cp_acc.vl["PRE_COLLISION"]["PRECOLLISION_ACTIVE"] and cp_acc.vl["PRE_COLLISION"]["FORCE"] < -1e-5)
@@ -132,7 +103,7 @@ class CarState(CarStateBase):
     )
     ret.vEgoRaw = mean([ret.wheelSpeeds.fl, ret.wheelSpeeds.fr, ret.wheelSpeeds.rl, ret.wheelSpeeds.rr])
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
-    ret.vEgoCluster = ret.vEgo * frogpilot_toggles.cluster_offset
+    ret.vEgoCluster = ret.vEgo * 1.015  # minimum of all the cars
 
     ret.standstill = abs(ret.vEgoRaw) < 1e-3
 
@@ -192,8 +163,7 @@ class CarState(CarStateBase):
       ret.cruiseState.speedCluster = cluster_set_speed * conversion_factor
 
     if self.CP.carFingerprint in TSS2_CAR and not self.CP.flags & ToyotaFlags.DISABLE_RADAR.value:
-      if not (self.CP.flags & ToyotaFlags.SMART_DSU.value):
-        self.acc_type = cp_acc.vl["ACC_CONTROL"]["ACC_TYPE"]
+      self.acc_type = cp_acc.vl["ACC_CONTROL"]["ACC_TYPE"]
       ret.stockFcw = bool(cp_acc.vl["PCS_HUD"]["FCW"])
 
     # some TSS2 cars have low speed lockout permanently set, so ignore on those cars
@@ -224,52 +194,12 @@ class CarState(CarStateBase):
     if self.CP.carFingerprint not in UNSUPPORTED_DSU_CAR:
       self.pcm_follow_distance = cp.vl["PCM_CRUISE_2"]["PCM_FOLLOW_DISTANCE"]
 
-    if self.CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR) or (self.CP.flags & ToyotaFlags.SMART_DSU and not self.CP.flags & ToyotaFlags.RADAR_CAN_FILTER):
+    if self.CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR):
       # distance button is wired to the ACC module (camera or radar)
-      self.prev_distance_button = self.distance_button
-      if self.CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR):
-        self.distance_button = cp_acc.vl["ACC_CONTROL"]["DISTANCE"]
-      else:
-        self.distance_button = cp.vl["SDSU"]["FD_BUTTON"]
+      prev_distance_button = self.distance_button
+      self.distance_button = cp_acc.vl["ACC_CONTROL"]["DISTANCE"]
 
-    # FrogPilot CarState functions
-    fp_ret.brakeLights = bool(cp.vl["ESP_CONTROL"]["BRAKE_LIGHTS_ACC"])
-
-    self.cruise_decreased_previously = self.cruise_decreased
-    self.cruise_decreased = self.pcm_acc_status == 10
-    self.cruise_increased_previously = self.cruise_increased
-    self.cruise_increased = self.pcm_acc_status == 9
-
-    fp_ret.dashboardSpeedLimit = calculate_speed_limit(cp_cam, frogpilot_toggles)
-
-    fp_ret.ecoGear = cp.vl["GEAR_PACKET"]['ECON_ON'] == 1
-    fp_ret.sportGear = cp.vl["GEAR_PACKET"]['SPORT_ON_2' if self.CP.flags & ToyotaFlags.NO_DSU else 'SPORT_ON'] == 1
-
-    if self.CP.carFingerprint != CAR.TOYOTA_PRIUS_V:
-      self.lkas_previously_enabled = self.lkas_enabled
-      self.lkas_enabled = self.lkas_hud.get("LDA_ON_MESSAGE") == 1
-
-    # ZSS Support - Credit goes to Erich!
-    if self.CP.flags & ToyotaFlags.ZSS:
-      if abs(torque_sensor_angle_deg) > 1e-3:
-        self.accurate_steer_angle_seen = True
-
-      if CC.latActive and not self.latActive_previous:
-        self.needs_angle_offset_zss = True
-      self.latActive_previous = CC.latActive
-
-      if self.needs_angle_offset_zss:
-        zorro_steer = cp.vl["SECONDARY_STEER_ANGLE"]["ZORRO_STEER"]
-        if abs(ret.steeringAngleDeg) > 1e-3 and abs(zorro_steer) > 1e-3:
-          self.needs_angle_offset_zss = False
-          self.angle_offset_zss = zorro_steer - ret.steeringAngleDeg
-      self.zorro_steer_value = cp.vl["SECONDARY_STEER_ANGLE"]["ZORRO_STEER"] - self.angle_offset_zss
-
-      if not self.needs_angle_offset_zss:
-        if abs(ret.steeringAngleDeg - self.zorro_steer_value) > 4.0:
-          ret.steeringAngleDeg = ret.steeringAngleDeg
-        else:
-          ret.steeringAngleDeg = self.zorro_steer_value
+      ret.buttonEvents = create_button_events(self.distance_button, prev_distance_button, {1: ButtonType.gapAdjustCruise})
 
     return ret, fp_ret
 
@@ -313,20 +243,13 @@ class CarState(CarStateBase):
     else:
       messages.append(("PCM_CRUISE_2", 33))
 
-    # add gas interceptor reading if we are using it
-    if CP.enableGasInterceptor:
-      messages.append(("GAS_SENSOR", 50))
-
     if CP.enableBsm:
       messages.append(("BSM", 1))
 
     if CP.carFingerprint in RADAR_ACC_CAR and not CP.flags & ToyotaFlags.DISABLE_RADAR.value:
-      if not CP.flags & ToyotaFlags.SMART_DSU.value:
-        messages += [
-          ("ACC_CONTROL", 33),
-        ]
       messages += [
         ("PCS_HUD", 1),
+        ("ACC_CONTROL", 33),
       ]
 
     if CP.carFingerprint not in (TSS2_CAR - RADAR_ACC_CAR) and not CP.enableDsu and not CP.flags & ToyotaFlags.DISABLE_RADAR.value:
@@ -334,24 +257,11 @@ class CarState(CarStateBase):
         ("PRE_COLLISION", 33),
       ]
 
-    if CP.flags & ToyotaFlags.SMART_DSU and not CP.flags & ToyotaFlags.RADAR_CAN_FILTER:
-      messages += [
-        ("SDSU", 100),
-      ]
-
-    if CP.flags & ToyotaFlags.ZSS:
-      messages += [("SECONDARY_STEER_ANGLE", 0)]
-
     return CANParser(DBC[CP.carFingerprint]["pt"], messages, 0)
 
   @staticmethod
   def get_cam_can_parser(CP):
     messages = []
-
-    messages += [
-      ("RSA1", 0),
-      ("RSA2", 0),
-    ]
 
     if CP.carFingerprint != CAR.TOYOTA_PRIUS_V:
       messages += [
