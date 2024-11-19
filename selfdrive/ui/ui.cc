@@ -438,8 +438,12 @@ void ui_update_frogpilot_params(UIState *s) {
   scene.road_edge_width = scene.frogpilot_toggles.value("road_edge_width").toDouble();
   scene.road_name_ui = scene.frogpilot_toggles.value("road_name_ui").toBool();
   scene.rotating_wheel = scene.frogpilot_toggles.value("rotating_wheel").toBool();
-  scene.screen_brightness = scene.frogpilot_toggles.value("screen_brightness").toDouble();
-  scene.screen_brightness_onroad = scene.frogpilot_toggles.value("screen_brightness_onroad").toDouble();
+  if (scene.screen_brightness == -1) {
+    scene.screen_brightness = scene.frogpilot_toggles.value("screen_brightness").toDouble();
+  }
+  if (scene.screen_brightness_onroad == -1) {
+    scene.screen_brightness_onroad = scene.frogpilot_toggles.value("screen_brightness_onroad").toDouble();
+  }
   scene.screen_recorder = scene.frogpilot_toggles.value("screen_recorder").toBool();
   scene.screen_timeout = scene.frogpilot_toggles.value("screen_timeout").toDouble();
   scene.screen_timeout_onroad = scene.frogpilot_toggles.value("screen_timeout_onroad").toDouble();
