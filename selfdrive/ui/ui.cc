@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <cassert>
 #include <cmath>
-#include <iostream>
 
 #include <QtConcurrent>
 
@@ -425,26 +424,8 @@ void ui_update_frogpilot_params(UIState *s) {
   scene.minimum_lane_change_speed = scene.frogpilot_toggles.value("minimum_lane_change_speed").toDouble();
   scene.model_randomizer = scene.frogpilot_toggles.value("model_randomizer").toBool();
   scene.model_ui = scene.frogpilot_toggles.value("model_ui").toBool();
-  auto value = scene.frogpilot_toggles.value("no_logging");
-  std::cout << "scene.frogpilot_toggles.value(\"no_logging\") raw value = "
-            << value.toString().toStdString() << std::endl;
-  std::cout << "Type check - isNull: " << value.isNull()
-            << ", isBool: " << (value.type() == QJsonValue::Bool) << std::endl
-            << ", isString: " << (value.type() == QJsonValue::String) << std::endl
-            << ", isDouble: " << (value.type() == QJsonValue::Double) << std::endl
-            << ", isInt: " << (value.isDouble() && (value.toDouble() == static_cast<int>(value.toDouble()))) << std::endl;
-  scene.no_logging = value.toBool();
-  std::cout << "scene.no_logging (after conversion) = " << scene.no_logging << std::endl;
-  value = scene.frogpilot_toggles.value("no_uploads");
-  std::cout << "scene.frogpilot_toggles.value(\"no_uploads\") raw value = "
-            << value.toString().toStdString() << std::endl;
-  std::cout << "Type check - isNull: " << value.isNull()
-            << ", isBool: " << (value.type() == QJsonValue::Bool) << std::endl
-            << ", isString: " << (value.type() == QJsonValue::String) << std::endl
-            << ", isDouble: " << (value.type() == QJsonValue::Double) << std::endl
-            << ", isInt: " << (value.isDouble() && (value.toDouble() == static_cast<int>(value.toDouble()))) << std::endl;
-  scene.no_uploads = value.toBool();
-  std::cout << "scene.no_uploads (after conversion) = " << scene.no_uploads << std::endl;
+  scene.no_logging = scene.frogpilot_toggles.value("no_logging").toBool();
+  scene.no_uploads = scene.frogpilot_toggles.value("no_uploads").toBool();
   scene.numerical_temp = scene.frogpilot_toggles.value("numerical_temp").toBool();
   scene.onroad_distance_button = scene.frogpilot_toggles.value("onroad_distance_button").toBool();
   scene.path_color = loadThemeColors("Path");
