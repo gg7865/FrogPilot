@@ -411,11 +411,12 @@ class FrogPilotVariables:
     toggle.warningSoft_volume = params.get_int("WarningSoftVolume") if toggle.alert_volume_control else 101
     toggle.warningImmediate_volume = max(params.get_int("WarningImmediateVolume"), 25) if toggle.alert_volume_control else 101
 
-    toggle.always_on_lateral = always_on_lateral_set and params.get_bool("AlwaysOnLateral")
-    toggle.always_on_lateral_lkas = toggle.always_on_lateral and car_make != "subaru" and params.get_bool("AlwaysOnLateralLKAS")
-    toggle.always_on_lateral_main = toggle.always_on_lateral and params.get_bool("AlwaysOnLateralMain")
-    toggle.always_on_lateral_pause_speed = params.get_int("PauseAOLOnBrake") if toggle.always_on_lateral else 0
-    toggle.always_on_lateral_status_bar = toggle.always_on_lateral and not params.get_bool("HideAOLStatusBar")
+    toggle.always_on_lateral = params.get_bool("AlwaysOnLateral")
+    toggle.always_on_lateral_set = toggle.always_on_lateral and always_on_lateral_set
+    toggle.always_on_lateral_lkas = toggle.always_on_lateral_set and car_make != "subaru" and params.get_bool("AlwaysOnLateralLKAS")
+    toggle.always_on_lateral_main = toggle.always_on_lateral_set and params.get_bool("AlwaysOnLateralMain")
+    toggle.always_on_lateral_pause_speed = params.get_int("PauseAOLOnBrake") if toggle.always_on_lateral_set else 0
+    toggle.always_on_lateral_status_bar = toggle.always_on_lateral_set and not params.get_bool("HideAOLStatusBar")
 
     toggle.automatic_updates = params.get_bool("AutomaticUpdates")
 
