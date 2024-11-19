@@ -379,7 +379,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"MapboxSecretKey", PERSISTENT},
     {"MapDeceleration", PERSISTENT | FROGPILOT_STORAGE | FROGPILOT_CONTROLS},
     {"MapGears", PERSISTENT | FROGPILOT_STORAGE | FROGPILOT_CONTROLS},
-    {"MapsSelected", PERSISTENT | FROGPILOT_OTHER},
+    {"MapsSelected", PERSISTENT | FROGPILOT_STORAGE | FROGPILOT_OTHER},
     {"MapSpeedLimit", PERSISTENT},
     {"MapStyle", PERSISTENT | FROGPILOT_STORAGE | FROGPILOT_VISUALS},
     {"MapTargetVelocities", PERSISTENT},
