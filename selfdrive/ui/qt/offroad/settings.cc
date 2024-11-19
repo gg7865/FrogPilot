@@ -1,5 +1,6 @@
 #include <cassert>
 #include <cmath>
+#include <iostream>
 #include <string>
 #include <tuple>
 #include <vector>
@@ -150,7 +151,10 @@ void TogglesPanel::updateToggles() {
   auto disengage_on_accelerator_toggle = toggles["DisengageOnAccelerator"];
   disengage_on_accelerator_toggle->setVisible(!scene.always_on_lateral);
   auto driver_camera_toggle = toggles["RecordFront"];
+  std::cout << "scene.no_logging = " << scene.no_logging << std::endl;
+  std::cout << "scene.no_uploads = " << scene.no_uploads << std::endl;
   driver_camera_toggle->setVisible(!(scene.no_logging && scene.no_uploads));
+  std::cout << "driver_camera_toggle visibility = " << (!(scene.no_logging && scene.no_uploads)) << std::endl;
   auto nav_settings_left_toggle = toggles["NavSettingLeftSide"];
   nav_settings_left_toggle->setVisible(!scene.full_map);
 
